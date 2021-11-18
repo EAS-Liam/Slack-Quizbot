@@ -8,6 +8,91 @@ const app = new App({
     appToken: process.env.SOCKET_TOKEN
 });
 
+app.command("/quiz", async ({ command, ack, say }) => {
+    try {
+        await ack();
+        await say (`Let's play a quiz <@${command.user_name}>!`)
+        quiz_question(ack, say);
+        
+    } catch (error) {
+        console.log("error")
+        console.error(error);
+    }
+});
+
+var quiz_complete = false;
+var quiz_quiestions = 0;
+var quiz_score = 0;
+
+function quiz_reset()
+{
+    quiz_complete = false;
+    quiz_quiestions = 0;
+    quiz_score = 0; 
+}
+async function quiz_question(ack, say)
+{
+    await ack();
+    if (quiz_quiestions >= 5) { quiz_complete = true };
+    if (quiz_complete == false)
+    {
+        await say({"blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": `Click answer 2`
+                }
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Answer 1",
+                            "emoji": true
+                        },
+                        "value": "0",
+                        "action_id": "button_incorrect"
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Answer 2",
+                            "emoji": true
+                        },
+                        "value": "1",
+                        "action_id": "button_correct"
+                    }
+                ]
+            }
+        ]});
+    }
+    else {
+        await say("Quiz is complete, score: " + quiz_score + "/5");
+        quiz_reset();
+    }
+}
+
+app.action('button_incorrect', async ({ack, say}) => {
+    await ack();
+    await say("Sorry, that's the wrong answer");
+    quiz_quiestions++;
+    quiz_question(ack, say);
+});
+
+app.action('button_correct', async ({ack, say}) => {
+    await ack();
+    await say("Congratulations, that's correct!");
+    quiz_quiestions++;
+    quiz_score++;
+    quiz_question(ack, say);
+
+});
+
 app.command("/test", async ({ command, ack, say }) => {
     try {
         await ack();
@@ -18,9 +103,9 @@ app.command("/test", async ({ command, ack, say }) => {
     }
 });
 
-app.message(/hello/, async ({ command, say}) => {
+app.message(/^(hi|hello|hey|Hi|Hello|Hey).*/, async ({ message, say}) => {
     try {
-        say("Hello, I am QuizBot");
+        await say(`Hello <@${message.user}>, I am QuizBot`);
     } catch (error) {
         console.log("error")
         console.error(error);

@@ -11,3 +11,8 @@ Impleneted simple question with "Answer" buttons are part of message.
 Impleneted button response.
 Impleneted basic score track (temporary).
 Quiz now ends after 5 questions and gives user score.
+
+Liam - 19/11/21:
+Answer options removed once selected to prevent users from selecting answers again.
+Implemented Radio Button multi-choice question option.
+Quiz now chooses random question between button and radio button question options.

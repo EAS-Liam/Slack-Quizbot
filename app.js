@@ -1,4 +1,5 @@
 const { App } = require("@slack/bolt");
+const { respondToSslCheck } = require("@slack/bolt/dist/receivers/ExpressReceiver");
 require("dotenv").config();
 // Initialise with bot tokens and signing secret
 const app = new App({
@@ -11,7 +12,7 @@ const app = new App({
 app.command("/quiz", async ({ command, ack, say }) => {
     try {
         await ack();
-        await say (`Let's play a quiz <@${command.user_name}>!`)
+        await say (`Let's play a quiz <@${command.user_name}>!`);
         quiz_question(ack, say);
         
     } catch (error) {
@@ -29,21 +30,57 @@ function quiz_reset()
     quiz_complete = false;
     quiz_quiestions = 0;
     quiz_score = 0; 
-}
+};
+async function answer_correct(ack, say, respond)
+{
+    await ack();
+    await respond({
+        replace_original: true,
+        text: "Congratulation, That's the correct answer!"
+    });
+    quiz_score++;
+    quiz_quiestions++;
+    quiz_question(ack, say);
+};
+async function answer_wrong(ack, say, respond)
+{
+    await ack();
+    await respond({
+        replace_original: true,
+        text: "Sorry, that's the wrong answer"
+    });
+    quiz_quiestions++;
+    quiz_question(ack, say);
+};
 async function quiz_question(ack, say)
 {
     await ack();
     if (quiz_quiestions >= 5) { quiz_complete = true };
     if (quiz_complete == false)
     {
+        let rnd = Math.floor(Math.random() * 2);
+        if (rnd === 0) {question_button(ack, say);}
+        else if (rnd === 1) {question_radio(ack, say);}
+    }
+    else {
+        await say("Quiz is complete, score: " + quiz_score + "/5");
+        quiz_reset();
+    }
+};
+
+async function question_button(ack, say)
+{
+    await ack();
         await say({"blocks": [
             {
                 "type": "section",
                 "text": {
-                    "type": "mrkdwn",
-                    "text": `Click answer 2`
+                    "type": "plain_text",
+                    "text": "Click answer 2"
                 }
-            },
+            }
+        ]})
+        await say({"blocks": [
             {
                 "type": "actions",
                 "elements": [
@@ -70,27 +107,75 @@ async function quiz_question(ack, say)
                 ]
             }
         ]});
+};
+
+async function question_radio(ack, say)
+{
+    await ack();
+        await say({"blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Click answer 2"
+                }
+            }
+        ]})
+        await say({"blocks": [
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "radio_buttons",
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Answer 1",
+                                    "emoji": true
+                                },
+                                "value": "value-0"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Answer 2",
+                                    "emoji": true
+                                },
+                                "value": "value-1"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Answer 3",
+                                    "emoji": true
+                                },
+                                "value": "value-2"
+                            }
+                        ],
+                        "action_id": "radio_submit"
+                    }
+                ]
+            },
+        ]});
+};
+
+app.action('radio_submit', async ({action, ack, say, respond}) => {
+    await ack();
+    if (action.selected_option.value === "value-1") {
+        answer_correct(ack, say, respond);
     }
     else {
-        await say("Quiz is complete, score: " + quiz_score + "/5");
-        quiz_reset();
+        answer_wrong(ack, say, respond);
     }
-}
-
-app.action('button_incorrect', async ({ack, say}) => {
-    await ack();
-    await say("Sorry, that's the wrong answer");
-    quiz_quiestions++;
-    quiz_question(ack, say);
 });
 
-app.action('button_correct', async ({ack, say}) => {
-    await ack();
-    await say("Congratulations, that's correct!");
-    quiz_quiestions++;
-    quiz_score++;
-    quiz_question(ack, say);
+app.action('button_incorrect', async ({ack, say, respond}) => {
+    answer_wrong(ack, say, respond);
+});
 
+app.action('button_correct', async ({ack, say, respond}) => {
+    answer_correct(ack, say, respond);
 });
 
 app.command("/test", async ({ command, ack, say }) => {

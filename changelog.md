@@ -16,3 +16,10 @@ Liam - 19/11/21:
 Answer options removed once selected to prevent users from selecting answers again.
 Implemented Radio Button multi-choice question option.
 Quiz now chooses random question between button and radio button question options.
+
+
+Liam - 22/11/21:
+Setup basic quiz questions database.
+Created 'questions' table with sample questions and answers.
+Connected to local database with app.
+Radio Button Questions and Answers now pulled from database.

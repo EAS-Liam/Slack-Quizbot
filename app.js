@@ -9,10 +9,27 @@ const app = new App({
     appToken: process.env.SOCKET_TOKEN
 });
 
+const mysql = require('mysql');
+const con = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: process.env.SQLPASS,
+    database: "QuizBot_Questions"
+});
+con.connect(function(err) {
+    if (err) throw err;
+    con.query("SELECT * FROM questions", function (err, result, fields) {
+        if (err) throw err;
+        sql_RAWResult = result;
+    });
+});
+
+
 app.command("/quiz", async ({ command, ack, say }) => {
     try {
         await ack();
         await say (`Let's play a quiz <@${command.user_name}>!`);
+        sql_Result = sql_RAWResult;
         quiz_question(ack, say);
         
     } catch (error) {
@@ -21,6 +38,9 @@ app.command("/quiz", async ({ command, ack, say }) => {
     }
 });
 
+var sql_RAWResult;
+var sql_Result;
+var current_question = 0;
 var quiz_complete = false;
 var quiz_quiestions = 0;
 var quiz_score = 0;
@@ -58,7 +78,10 @@ async function quiz_question(ack, say)
     if (quiz_quiestions >= 5) { quiz_complete = true };
     if (quiz_complete == false)
     {
-        let rnd = Math.floor(Math.random() * 2);
+        current_question = Math.floor(Math.random() * 4);
+        await say("Question " + (quiz_quiestions+1) + ":");
+        //let rnd = Math.floor(Math.random() * 2);
+        let rnd = 1;
         if (rnd === 0) {question_button(ack, say);}
         else if (rnd === 1) {question_radio(ack, say);}
     }
@@ -117,7 +140,7 @@ async function question_radio(ack, say)
                 "type": "section",
                 "text": {
                     "type": "plain_text",
-                    "text": "Click answer 2"
+                    "text": sql_Result[current_question].question
                 }
             }
         ]})
@@ -131,27 +154,35 @@ async function question_radio(ack, say)
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": "Answer 1",
+                                    "text": sql_Result[current_question].ans_1,
                                     "emoji": true
                                 },
-                                "value": "value-0"
+                                "value": "1"
                             },
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": "Answer 2",
+                                    "text": sql_Result[current_question].ans_2,
                                     "emoji": true
                                 },
-                                "value": "value-1"
+                                "value": "2"
                             },
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": "Answer 3",
+                                    "text": sql_Result[current_question].ans_3,
                                     "emoji": true
                                 },
-                                "value": "value-2"
-                            }
+                                "value": "3"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": sql_Result[current_question].ans_4,
+                                    "emoji": true
+                                },
+                                "value": "4"
+                            },
                         ],
                         "action_id": "radio_submit"
                     }
@@ -162,7 +193,7 @@ async function question_radio(ack, say)
 
 app.action('radio_submit', async ({action, ack, say, respond}) => {
     await ack();
-    if (action.selected_option.value === "value-1") {
+    if (parseInt(action.selected_option.value) === sql_Result[current_question].correct_ans) {
         answer_correct(ack, say, respond);
     }
     else {
@@ -181,7 +212,11 @@ app.action('button_correct', async ({ack, say, respond}) => {
 app.command("/test", async ({ command, ack, say }) => {
     try {
         await ack();
-        say("Yaaay! updated command is working!");
+        con.query("SELECT * FROM questions", function (err, result, fields) {
+            if (err) throw err;
+            res=JSON.parse(JSON.stringify(result))
+            say("" +result[1].id);
+        });
     } catch (error) {
         console.log("error")
         console.error(error);
@@ -202,4 +237,5 @@ app.message(/^(hi|hello|hey|Hi|Hello|Hey).*/, async ({ message, say}) => {
     // Start App
     await app.start(process.env.PORT || port);
     console.log(`Slack Bolt app running on port ${port}!`);
+    //console.log(sql_RAWResult);
 })();

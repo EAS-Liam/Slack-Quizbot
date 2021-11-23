@@ -11,10 +11,10 @@ const app = new App({
 
 const mysql = require('mysql');
 const con = mysql.createConnection({
-    host: "localhost",
+    host: "host.docker.internal",
     user: "root",
     password: process.env.SQLPASS,
-    database: "QuizBot_Questions"
+    database: "Quizbot"
 });
 con.connect(function(err) {
     if (err) throw err;

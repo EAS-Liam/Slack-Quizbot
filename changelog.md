@@ -23,3 +23,8 @@ Setup basic quiz questions database.
 Created 'questions' table with sample questions and answers.
 Connected to local database with app.
 Radio Button Questions and Answers now pulled from database.
+
+Liam - 23/11/21:
+Setup docker containerised database.
+Replaced loacl database with containerised database in app.
+Containerised app and linked app container with database container.

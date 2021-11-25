@@ -17,7 +17,6 @@ Answer options removed once selected to prevent users from selecting answers aga
 Implemented Radio Button multi-choice question option.
 Quiz now chooses random question between button and radio button question options.
 
-
 Liam - 22/11/21:
 Setup basic quiz questions database.
 Created 'questions' table with sample questions and answers.
@@ -28,3 +27,8 @@ Liam - 23/11/21:
 Setup docker containerised database.
 Replaced loacl database with containerised database in app.
 Containerised app and linked app container with database container.
+
+Liam - 25/11/21:
+Updated database with actual questions for the quiz app.
+Database updates with users name and their score to user_scores tabel on completing the quiz.
+Added save option so user can choose to save or not save their quiz score to the database.

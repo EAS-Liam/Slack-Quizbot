@@ -20,7 +20,7 @@ con.connect(function(err) {
     if (err) throw err;
     con.query("SELECT * FROM questions", function (err, result, fields) {
         if (err) throw err;
-        sql_RAWResult = result;
+        sql_Result = result;
     });
 });
 
@@ -29,7 +29,8 @@ app.command("/quiz", async ({ command, ack, say }) => {
     try {
         await ack();
         await say (`Let's play a quiz <@${command.user_name}>!`);
-        sql_Result = sql_RAWResult;
+        current_user_name = command.user_name;
+        //sql_Result = sql_RAWResult;
         quiz_question(ack, say);
         
     } catch (error) {
@@ -38,7 +39,8 @@ app.command("/quiz", async ({ command, ack, say }) => {
     }
 });
 
-var sql_RAWResult;
+var current_user_name;
+//var sql_RAWResult;
 var sql_Result;
 var current_question = 0;
 var quiz_complete = false;
@@ -51,6 +53,67 @@ function quiz_reset()
     quiz_quiestions = 0;
     quiz_score = 0; 
 };
+async function save_score(ack, say)
+{
+    await ack();
+        await say({"blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Would you like to save your results?"
+                }
+            }
+        ]})
+        await say({"blocks": [
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Yes",
+                            "emoji": true
+                        },
+                        "value": "0",
+                        "action_id": "save"
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "No",
+                            "emoji": true
+                        },
+                        "value": "1",
+                        "action_id": "dont_save"
+                    }
+                ]
+            }
+        ]});
+};
+app.action('save', async ({action, ack, say, respond}) => {
+    await ack();
+    con.query(`INSERT INTO user_scores (user_name, quiz_score) VALUES ('${current_user_name}', ${quiz_score});`, function (err, result, fields) {
+        if (err) throw err;
+    });
+    await respond({
+        replace_original: true,
+        text: "your score was saved to the database"
+    });
+
+    quiz_reset();
+});
+app.action('dont_save', async ({action, ack, say, respond}) => {
+    await ack();
+    await respond({
+        replace_original: true,
+        text: "Your score was not saved to the database"
+    });
+
+    quiz_reset();
+});
 async function answer_correct(ack, say, respond)
 {
     await ack();
@@ -78,8 +141,17 @@ async function quiz_question(ack, say)
     if (quiz_quiestions >= 5) { quiz_complete = true };
     if (quiz_complete == false)
     {
-        current_question = Math.floor(Math.random() * 4);
+        current_question = Math.floor(Math.random() * 20);
         await say("Question " + (quiz_quiestions+1) + ":");
+        if (sql_Result[current_question].id < 10){
+            await say("Select the command that performs the function discribed");
+        }
+        else if (sql_Result[current_question].id < 15){
+            await say("select the command that represents the specified directory")
+        }
+        else if (sql_Result[current_question].id < 20){
+            await say("select the command that performs the function in a file")
+        }
         //let rnd = Math.floor(Math.random() * 2);
         let rnd = 1;
         if (rnd === 0) {question_button(ack, say);}
@@ -87,7 +159,8 @@ async function quiz_question(ack, say)
     }
     else {
         await say("Quiz is complete, score: " + quiz_score + "/5");
-        quiz_reset();
+
+        save_score(ack, say);
     }
 };
 
@@ -140,7 +213,7 @@ async function question_radio(ack, say)
                 "type": "section",
                 "text": {
                     "type": "plain_text",
-                    "text": sql_Result[current_question].question
+                    "text": (sql_Result[current_question].question + ":")
                 }
             }
         ]})

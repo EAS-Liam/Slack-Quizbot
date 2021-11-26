@@ -32,3 +32,8 @@ Liam - 25/11/21:
 Updated database with actual questions for the quiz app.
 Database updates with users name and their score to user_scores tabel on completing the quiz.
 Added save option so user can choose to save or not save their quiz score to the database.
+
+Liam - 26/11/21:
+Implmented quiz quit functionality, quitting out of quiz and not saving score.
+Updated database with more questions.
+Updated database link for question grabbing to be more efficient (now only a single question is pulled from the database at random when the bot asks a question instead of pulling the entire tabel and choosing from that).

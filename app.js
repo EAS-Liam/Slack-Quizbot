@@ -18,19 +18,18 @@ const con = mysql.createConnection({
 });
 con.connect(function(err) {
     if (err) throw err;
-    con.query("SELECT * FROM questions", function (err, result, fields) {
-        if (err) throw err;
-        sql_Result = result;
-    });
+    console.log("Connected to database!");
+    // con.query("SELECT * FROM questions", function (err, result, fields) {
+    //     if (err) throw err;
+    //     sql_Result = result;
+    // });
 });
-
 
 app.command("/quiz", async ({ command, ack, say }) => {
     try {
         await ack();
         await say (`Let's play a quiz <@${command.user_name}>!`);
         current_user_name = command.user_name;
-        //sql_Result = sql_RAWResult;
         quiz_question(ack, say);
         
     } catch (error) {
@@ -40,19 +39,139 @@ app.command("/quiz", async ({ command, ack, say }) => {
 });
 
 var current_user_name;
-//var sql_RAWResult;
 var sql_Result;
-var current_question = 0;
 var quiz_complete = false;
+var current_question = 0;
 var quiz_quiestions = 0;
 var quiz_score = 0;
 
 function quiz_reset()
 {
     quiz_complete = false;
+    current_question = 0;
     quiz_quiestions = 0;
     quiz_score = 0; 
 };
+
+async function quiz_question(ack, say)
+{
+    await ack();
+    if (quiz_quiestions >= 5) { quiz_complete = true };
+    if (quiz_complete == false)
+    {
+        current_question = Math.floor(Math.random() * 30);
+        con.query(`SELECT * FROM questions WHERE id = ${current_question}`, function (err, result, fields) {
+             if (err) throw err;
+             sql_Result = result;
+         });
+        await say("Question " + (quiz_quiestions+1) + ":");
+        if (current_question < 10){
+            await say("In the terminal which command is used to");
+        }
+        else if (current_question < 15){
+            await say("Which command represents the specified directory")
+        }
+        else if (current_question < 20){
+            await say("Select the command that performs the function in a file")
+        }
+        else if (current_question < 30){
+            await say("Select the command that performs the function in a vi session")
+        }
+        question_radio(ack, say);
+    }
+    else {
+        await say("Quiz is complete, score: " + quiz_score + "/5");
+
+        save_score(ack, say);
+    }
+};
+
+async function question_radio(ack, say)
+{
+    await ack();
+        await say({"blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": (sql_Result[0].question + ":")
+                }
+            }
+        ]})
+        await say({"blocks": [
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "radio_buttons",
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": sql_Result[0].ans_1,
+                                    "emoji": true
+                                },
+                                "value": "1"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": sql_Result[0].ans_2,
+                                    "emoji": true
+                                },
+                                "value": "2"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": sql_Result[0].ans_3,
+                                    "emoji": true
+                                },
+                                "value": "3"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": sql_Result[0].ans_4,
+                                    "emoji": true
+                                },
+                                "value": "4"
+                            },
+                        ],
+                        "action_id": "radio_submit"
+                    }
+                ]
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "plain_text",
+                    "text": " "
+                },
+                "accessory": {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Quit Quiz",
+                        "emoji": true
+                    },
+                    "value": "quit",
+                    "action_id": "quit_quiz"
+                }
+            },
+        ]});
+};
+
+app.action('radio_submit', async ({action, ack, say, respond}) => {
+    await ack();
+    if (parseInt(action.selected_option.value) === sql_Result[0].correct_ans) {
+        answer_correct(ack, say, respond);
+    }
+    else {
+        answer_wrong(ack, say, respond);
+    }
+});
+
 async function save_score(ack, say)
 {
     await ack();
@@ -93,6 +212,7 @@ async function save_score(ack, say)
             }
         ]});
 };
+
 app.action('save', async ({action, ack, say, respond}) => {
     await ack();
     con.query(`INSERT INTO user_scores (user_name, quiz_score) VALUES ('${current_user_name}', ${quiz_score});`, function (err, result, fields) {
@@ -105,6 +225,7 @@ app.action('save', async ({action, ack, say, respond}) => {
 
     quiz_reset();
 });
+
 app.action('dont_save', async ({action, ack, say, respond}) => {
     await ack();
     await respond({
@@ -114,6 +235,7 @@ app.action('dont_save', async ({action, ack, say, respond}) => {
 
     quiz_reset();
 });
+
 async function answer_correct(ack, say, respond)
 {
     await ack();
@@ -125,6 +247,7 @@ async function answer_correct(ack, say, respond)
     quiz_quiestions++;
     quiz_question(ack, say);
 };
+
 async function answer_wrong(ack, say, respond)
 {
     await ack();
@@ -135,170 +258,19 @@ async function answer_wrong(ack, say, respond)
     quiz_quiestions++;
     quiz_question(ack, say);
 };
-async function quiz_question(ack, say)
-{
+
+app.action('quit_quiz', async ({action, ack, say, respond}) => {
     await ack();
-    if (quiz_quiestions >= 5) { quiz_complete = true };
-    if (quiz_complete == false)
-    {
-        current_question = Math.floor(Math.random() * 20);
-        await say("Question " + (quiz_quiestions+1) + ":");
-        if (sql_Result[current_question].id < 10){
-            await say("Select the command that performs the function discribed");
-        }
-        else if (sql_Result[current_question].id < 15){
-            await say("select the command that represents the specified directory")
-        }
-        else if (sql_Result[current_question].id < 20){
-            await say("select the command that performs the function in a file")
-        }
-        //let rnd = Math.floor(Math.random() * 2);
-        let rnd = 1;
-        if (rnd === 0) {question_button(ack, say);}
-        else if (rnd === 1) {question_radio(ack, say);}
-    }
-    else {
-        await say("Quiz is complete, score: " + quiz_score + "/5");
-
-        save_score(ack, say);
-    }
-};
-
-async function question_button(ack, say)
-{
-    await ack();
-        await say({"blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Click answer 2"
-                }
-            }
-        ]})
-        await say({"blocks": [
-            {
-                "type": "actions",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Answer 1",
-                            "emoji": true
-                        },
-                        "value": "0",
-                        "action_id": "button_incorrect"
-                    },
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Answer 2",
-                            "emoji": true
-                        },
-                        "value": "1",
-                        "action_id": "button_correct"
-                    }
-                ]
-            }
-        ]});
-};
-
-async function question_radio(ack, say)
-{
-    await ack();
-        await say({"blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "plain_text",
-                    "text": (sql_Result[current_question].question + ":")
-                }
-            }
-        ]})
-        await say({"blocks": [
-            {
-                "type": "actions",
-                "elements": [
-                    {
-                        "type": "radio_buttons",
-                        "options": [
-                            {
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": sql_Result[current_question].ans_1,
-                                    "emoji": true
-                                },
-                                "value": "1"
-                            },
-                            {
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": sql_Result[current_question].ans_2,
-                                    "emoji": true
-                                },
-                                "value": "2"
-                            },
-                            {
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": sql_Result[current_question].ans_3,
-                                    "emoji": true
-                                },
-                                "value": "3"
-                            },
-                            {
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": sql_Result[current_question].ans_4,
-                                    "emoji": true
-                                },
-                                "value": "4"
-                            },
-                        ],
-                        "action_id": "radio_submit"
-                    }
-                ]
-            },
-        ]});
-};
-
-app.action('radio_submit', async ({action, ack, say, respond}) => {
-    await ack();
-    if (parseInt(action.selected_option.value) === sql_Result[current_question].correct_ans) {
-        answer_correct(ack, say, respond);
-    }
-    else {
-        answer_wrong(ack, say, respond);
-    }
-});
-
-app.action('button_incorrect', async ({ack, say, respond}) => {
-    answer_wrong(ack, say, respond);
-});
-
-app.action('button_correct', async ({ack, say, respond}) => {
-    answer_correct(ack, say, respond);
-});
-
-app.command("/test", async ({ command, ack, say }) => {
-    try {
-        await ack();
-        con.query("SELECT * FROM questions", function (err, result, fields) {
-            if (err) throw err;
-            res=JSON.parse(JSON.stringify(result))
-            say("" +result[1].id);
-        });
-    } catch (error) {
-        console.log("error")
-        console.error(error);
-    }
+    await respond({
+        replace_original: true,
+        text: "Quiz Quit, score will not be saved"
+    });
+    quiz_reset();
 });
 
 app.message(/^(hi|hello|hey|Hi|Hello|Hey).*/, async ({ message, say}) => {
     try {
-        await say(`Hello <@${message.user}>, I am QuizBot`);
+        await say(`Hello <@${message.user}>, I am QuizBot, type /quiz to start a quiz`);
     } catch (error) {
         console.log("error")
         console.error(error);
@@ -309,6 +281,5 @@ app.message(/^(hi|hello|hey|Hi|Hello|Hey).*/, async ({ message, say}) => {
     const port = 3000
     // Start App
     await app.start(process.env.PORT || port);
-    console.log(`Slack Bolt app running on port ${port}!`);
-    //console.log(sql_RAWResult);
+    //console.log(`Slack Bolt app running on port ${port}!`);
 })();

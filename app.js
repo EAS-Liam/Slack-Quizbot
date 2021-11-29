@@ -43,6 +43,7 @@ var sql_Result;
 var quiz_complete = false;
 var current_question = 0;
 var quiz_quiestions = 0;
+var quiz_length = 5;
 var quiz_score = 0;
 
 function quiz_reset()
@@ -56,7 +57,7 @@ function quiz_reset()
 async function quiz_question(ack, say)
 {
     await ack();
-    if (quiz_quiestions >= 5) { quiz_complete = true };
+    if (quiz_quiestions >= quiz_length) { quiz_complete = true };
     if (quiz_complete == false)
     {
         current_question = Math.floor(Math.random() * 30);
@@ -80,7 +81,7 @@ async function quiz_question(ack, say)
         question_radio(ack, say);
     }
     else {
-        await say("Quiz is complete, score: " + quiz_score + "/5");
+        await say("Quiz is complete, score: " + quiz_score + "/" + quiz_length);
 
         save_score(ack, say);
     }

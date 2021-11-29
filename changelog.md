@@ -37,3 +37,7 @@ Liam - 26/11/21:
 Implmented quiz quit functionality, quitting out of quiz and not saving score.
 Updated database with more questions.
 Updated database link for question grabbing to be more efficient (now only a single question is pulled from the database at random when the bot asks a question instead of pulling the entire tabel and choosing from that).
+
+Liam 29/11/21:
+Working on new development branch. Branch will be used for current unfinished or broken updates.
+Working on Docker Compose file, currently creates the 2 images required but database persistance is not working so image volume link needs to be worked on.

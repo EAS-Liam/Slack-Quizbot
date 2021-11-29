@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  database:
+    image: mysql:5.7
+    volumes:
+      - sql_volume:/Users/liamvallance/node/app
+    ports:
+      - 3306:3306
+    environment: 
+      - MYSQL_ROOT_PASSWORD=${SQLPASS}
+
+  quizbot:
+    build: .
+    volumes:
+      - bot_volume:/Users/liamvallance/node/app
+    restart: on-failure
+    depends_on:
+      - database
+    links: 
+      - database
+
+volumes:
+  bot_volume:
+    external: true
+  
+  sql_volume:
+    external: true

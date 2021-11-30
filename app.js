@@ -21,7 +21,7 @@ con.connect(function(err) {
     console.log("Connected to database!");
     // con.query("SELECT * FROM questions", function (err, result, fields) {
     //     if (err) throw err;
-    //     sql_Result = result;
+    //     sql_RAWResult = result;
     // });
 });
 
@@ -30,6 +30,17 @@ app.command("/quiz", async ({ command, ack, say }) => {
         await ack();
         await say (`Let's play a quiz <@${command.user_name}>!`);
         current_user_name = command.user_name;
+
+        con.query("SELECT * FROM questions", function (err, result, fields) {
+            if (err) throw err;
+            sql_RAWResult = result;
+        });
+        con.query("SELECT COUNT(*) AS count FROM questions", function (err, result) {
+            if (err) throw err;
+            question_count = result[0].count;
+            //console.log(question_count);
+        });
+
         quiz_question(ack, say);
         
     } catch (error) {
@@ -39,8 +50,10 @@ app.command("/quiz", async ({ command, ack, say }) => {
 });
 
 var current_user_name;
+var sql_RAWResult;
 var sql_Result;
 var quiz_complete = false;
+var question_count = 0;
 var current_question = 0;
 var quiz_quiestions = 0;
 var quiz_length = 5;
@@ -60,11 +73,7 @@ async function quiz_question(ack, say)
     if (quiz_quiestions >= quiz_length) { quiz_complete = true };
     if (quiz_complete == false)
     {
-        current_question = Math.floor(Math.random() * 30);
-        con.query(`SELECT * FROM questions WHERE id = ${current_question}`, function (err, result, fields) {
-             if (err) throw err;
-             sql_Result = result;
-         });
+        current_question = Math.floor(Math.random() * question_count);
         await say("Question " + (quiz_quiestions+1) + ":");
         if (current_question < 10){
             await say("In the terminal which command is used to");
@@ -95,7 +104,7 @@ async function question_radio(ack, say)
                 "type": "section",
                 "text": {
                     "type": "plain_text",
-                    "text": (sql_Result[0].question + ":")
+                    "text": (sql_RAWResult[current_question].question + ":")
                 }
             }
         ]})
@@ -109,7 +118,7 @@ async function question_radio(ack, say)
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": sql_Result[0].ans_1,
+                                    "text": sql_RAWResult[current_question].ans_1,
                                     "emoji": true
                                 },
                                 "value": "1"
@@ -117,7 +126,7 @@ async function question_radio(ack, say)
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": sql_Result[0].ans_2,
+                                    "text": sql_RAWResult[current_question].ans_2,
                                     "emoji": true
                                 },
                                 "value": "2"
@@ -125,7 +134,7 @@ async function question_radio(ack, say)
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": sql_Result[0].ans_3,
+                                    "text": sql_RAWResult[current_question].ans_3,
                                     "emoji": true
                                 },
                                 "value": "3"
@@ -133,7 +142,7 @@ async function question_radio(ack, say)
                             {
                                 "text": {
                                     "type": "plain_text",
-                                    "text": sql_Result[0].ans_4,
+                                    "text": sql_RAWResult[current_question].ans_4,
                                     "emoji": true
                                 },
                                 "value": "4"
@@ -165,7 +174,7 @@ async function question_radio(ack, say)
 
 app.action('radio_submit', async ({action, ack, say, respond}) => {
     await ack();
-    if (parseInt(action.selected_option.value) === sql_Result[0].correct_ans) {
+    if (parseInt(action.selected_option.value) === sql_RAWResult[current_question].correct_ans) {
         answer_correct(ack, say, respond);
     }
     else {

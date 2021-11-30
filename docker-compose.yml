@@ -4,7 +4,7 @@ services:
   database:
     image: mysql:5.7
     volumes:
-      - sql_volume:/Users/liamvallance/node/app
+      - sql_volume:/var/lib/mysql
     ports:
       - 3306:3306
     environment: 
@@ -13,16 +13,12 @@ services:
   quizbot:
     build: .
     volumes:
-      - bot_volume:/Users/liamvallance/node/app
+      - .:/home
+    ports:
+      - 3000:3000
     restart: on-failure
     depends_on:
       - database
-    links: 
-      - database
 
 volumes:
-  bot_volume:
-    external: true
-  
   sql_volume:
-    external: true

@@ -38,6 +38,11 @@ Implmented quiz quit functionality, quitting out of quiz and not saving score.
 Updated database with more questions.
 Updated database link for question grabbing to be more efficient (now only a single question is pulled from the database at random when the bot asks a question instead of pulling the entire tabel and choosing from that).
 
-Liam 29/11/21:
+Liam - 29/11/21:
 Working on new development branch. Branch will be used for current unfinished or broken updates.
 Working on Docker Compose file, currently creates the 2 images required but database persistance is not working so image volume link needs to be worked on.
+
+Liam - 30/11/21:
+Resolved container volume links issue.
+Question randomiser can now handle a missing row (e.g if id 6 does not exist the app will not break).
+Question randomiser is now linked to size of questions list (e.g if database has 30 questions, will randomise between 30, if databse has 5 question, will randomise between 5);

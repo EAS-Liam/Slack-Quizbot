@@ -4,7 +4,8 @@ services:
   database:
     image: mysql:5.7
     volumes:
-      - sql_volume:/var/lib/mysql
+      - ./sql_dump/Quizbot_data.sql:/docker-entrypoint-initdb.d/initdb.sql
+      #- sql_volume:/var/lib/mysql
     ports:
       - 3306:3306
     environment: 

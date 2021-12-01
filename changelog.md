@@ -46,3 +46,6 @@ Liam - 30/11/21:
 Resolved container volume links issue.
 Question randomiser can now handle a missing row (e.g if id 6 does not exist the app will not break).
 Question randomiser is now linked to size of questions list (e.g if database has 30 questions, will randomise between 30, if databse has 5 question, will randomise between 5);
+
+Liam - 01/12/21:
+Docker Compose file now creates database and populates questions tabel with question data when new server is spun up.
